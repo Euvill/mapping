@@ -187,7 +187,7 @@ bool LIOBackEnd::MaybeNewKeyFrame(const CloudData& cloud_data, const PoseData& l
         // init IMU pre-integrator:
         if (imu_pre_integrator_ptr_) 
             imu_pre_integrator_ptr_->Init(imu_data);
-        if ( odo_pre_integrator_ptr_ ) {
+        if (odo_pre_integrator_ptr_) {
             gnss_odom.GetVelocityData(velocity_data);
             odo_pre_integrator_ptr_->Init(velocity_data);
         }
@@ -207,7 +207,7 @@ bool LIOBackEnd::MaybeNewKeyFrame(const CloudData& cloud_data, const PoseData& l
             imu_pre_integrator_ptr_->Reset(imu_data, imu_pre_integration_); 
         
 
-        if ( odo_pre_integrator_ptr_ ) {
+        if (odo_pre_integrator_ptr_) {
             gnss_odom.GetVelocityData(velocity_data);
             odo_pre_integrator_ptr_->Reset(velocity_data, odo_pre_integration_); 
         }
@@ -262,10 +262,13 @@ bool LIOBackEnd::AddNodeAndEdge() {
 
     // add node for new key frame pose:
     // fix the pose of the first key frame for lidar only mapping:
-    if (!graph_optimizer_config_.use_gnss && graph_optimizer_ptr_->GetNodeNum() == 0)
-        graph_optimizer_ptr_->AddPRVAGNode(current_key_frame_, true);
-    else 
-        graph_optimizer_ptr_->AddPRVAGNode(current_key_gnss_, false);
+    if (!graph_optimizer_config_.use_gnss && graph_optimizer_ptr_->GetNodeNum() == 0) {
+        graph_optimizer_ptr_->AddPRVAGNode(current_key_gnss_, true);
+    }
+    else {
+        graph_optimizer_ptr_->AddPRVAGNode(current_key_frame_, false);
+    } 
+        
 
     // add constraints:
     // get num. of vertices:
@@ -283,7 +286,7 @@ bool LIOBackEnd::AddNodeAndEdge() {
     }
 
     // b. GNSS position:
-    if ( graph_optimizer_config_.use_gnss) {
+    if (N < 20 || graph_optimizer_config_.use_gnss) {
         // get prior position measurement:
         Eigen::Vector3d pos = current_key_gnss_.pose.block<3, 1>(0, 3).cast<double>();
         // add constraint, GNSS position:
@@ -291,13 +294,13 @@ bool LIOBackEnd::AddNodeAndEdge() {
     }
 
     // c. IMU pre-integration:
-    if ( graph_optimizer_config_.use_imu_pre_integration && N > 20) {
+    if (graph_optimizer_config_.use_imu_pre_integration && N > 20) {
         // add constraint, IMU pre-integraion:
         graph_optimizer_ptr_->AddPRVAGIMUPreIntegrationEdge(vertex_index_i, vertex_index_j, imu_pre_integration_);
     }
 
         // d. Odo pre-integration:
-    if ( graph_optimizer_config_.use_odo_pre_integration ) {
+    if (graph_optimizer_config_.use_odo_pre_integration) {
         // add constraint, odo pre-integraion:
         graph_optimizer_ptr_->AddPRVAGODOPreIntegrationEdge(vertex_index_i, vertex_index_j, odo_pre_integration_);
     }

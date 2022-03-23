@@ -84,7 +84,6 @@ public:
 		const Sophus::SO3d    &ori_j = v1->estimate().ori;
 		const Eigen::Vector3d &vel_j = v1->estimate().vel;
 
-		// update pre-integration measurement caused by bias change:
 		if ( v0->isUpdated() ) {
 			Eigen::Vector3d d_b_a_i, d_b_g_i;
 
@@ -92,21 +91,21 @@ public:
 
 			updateMeasurement(d_b_a_i, d_b_g_i);
 		}
-
+		
 		const Eigen::Vector3d &theta_ij = _measurement.block<3, 1>(INDEX_R, 0);
+		const Eigen::Matrix3d J_r_inv = JacobianRInv(theta_ij);
+		const Sophus::SO3d r_ori = ori_i.inverse();
 
-		Sophus::SO3d r_ori = ori_i.inverse();
 		_jacobianOplusXi.block<3, 3>(0, 0) = (-1) * r_ori.matrix();
 		_jacobianOplusXi.block<3, 3>(0, 3) = Sophus::SO3d::hat(r_ori.matrix() * (pos_j - pos_i - (vel_i - 0.50 * g_ * T_) * T_));
 		_jacobianOplusXi.block<3, 3>(0, 6) = (-1) * r_ori.matrix() * T_;
 		_jacobianOplusXi.block<3, 3>(0, 9) = (-1) * J_.block<3, 3>(INDEX_P, INDEX_A);
 		_jacobianOplusXi.block<3, 3>(0, 12)= (-1) * J_.block<3, 3>(INDEX_P, INDEX_G);
 
-		Sophus::SO3d tmp = ori_j.inverse() * ori_i * Sophus::SO3d::exp(theta_ij);
-		_jacobianOplusXi.block<3, 3>(3, 3) = (-1) * tmp.matrix();
-		_jacobianOplusXi.block<3, 3>(3, 12)= (-1) * tmp.matrix() * J_.block<3, 3>(INDEX_R, INDEX_G);
+		_jacobianOplusXi.block<3, 3>(3, 3) = (-1) * J_r_inv * (ori_j.inverse() * ori_i).matrix();
+		_jacobianOplusXi.block<3, 3>(3, 12)= (-1) * J_r_inv * Sophus::SO3d::exp(theta_ij).matrix().inverse() * J_.block<3, 3>(INDEX_R, INDEX_G);
 
-		_jacobianOplusXi.block<3, 3>(6, 3) = Sophus::SO3d::hat(r_ori.matrix() * (vel_j - vel_i - g_ * T_));
+		_jacobianOplusXi.block<3, 3>(6, 3) = Sophus::SO3d::hat(r_ori.matrix() * (vel_j - vel_i + g_ * T_));
 		_jacobianOplusXi.block<3, 3>(6, 6) = (-1) * r_ori.matrix();
 		_jacobianOplusXi.block<3, 3>(6, 9) = (-1) * J_.block<3, 3>(INDEX_V, INDEX_A);
 		_jacobianOplusXi.block<3, 3>(6, 12)= (-1) * J_.block<3, 3>(INDEX_V, INDEX_G);
@@ -114,10 +113,8 @@ public:
 		_jacobianOplusXi.block<3, 3>(9, 9)  = (-1) * Eigen::Matrix3d::Identity();
 		_jacobianOplusXi.block<3, 3>(12, 12)= (-1) * Eigen::Matrix3d::Identity();
 
-
 		_jacobianOplusXj.block<3, 3>(0, 0) = r_ori.matrix();
-		tmp = Sophus::SO3d::exp(theta_ij).inverse() * r_ori * ori_j;
-		_jacobianOplusXj.block<3, 3>(3, 3) = tmp.matrix();
+		_jacobianOplusXj.block<3, 3>(3, 3) = J_r_inv;
 		_jacobianOplusXj.block<3, 3>(6, 6) = r_ori.matrix();
 		_jacobianOplusXj.block<3, 3>(9, 9) = Eigen::Matrix3d::Identity();
 		_jacobianOplusXj.block<3, 3>(12,12)= Eigen::Matrix3d::Identity();
@@ -205,6 +202,23 @@ public:
 	}
 
 private:
+	static Eigen::Matrix3d JacobianRInv(const Eigen::Vector3d &w) {
+		Eigen::Matrix3d J_r_inv = Eigen::Matrix3d::Identity();
+
+		double theta = w.norm();
+
+		if ( theta > 1e-5 ) {
+			Eigen::Vector3d k = w.normalized();
+			Eigen::Matrix3d K = Sophus::SO3d::hat(k);
+			
+			J_r_inv = J_r_inv 
+						+ 0.5 * K
+						+ (1.0 - (1.0 + std::cos(theta)) * theta / (2.0 * std::sin(theta))) * K * K;
+		}
+
+		return J_r_inv;
+	}
+
 	double T_ = 0.0;
 
 	Eigen::Vector3d g_ = Eigen::Vector3d::Zero();
