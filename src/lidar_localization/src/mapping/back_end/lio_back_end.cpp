@@ -263,10 +263,10 @@ bool LIOBackEnd::AddNodeAndEdge() {
     // add node for new key frame pose:
     // fix the pose of the first key frame for lidar only mapping:
     if (!graph_optimizer_config_.use_gnss && graph_optimizer_ptr_->GetNodeNum() == 0) {
-        graph_optimizer_ptr_->AddPRVAGNode(current_key_gnss_, true);
+        graph_optimizer_ptr_->AddPRVAGNode(current_key_frame_, true);
     }
     else {
-        graph_optimizer_ptr_->AddPRVAGNode(current_key_frame_, false);
+        graph_optimizer_ptr_->AddPRVAGNode(current_key_gnss_, false);
     } 
         
 
@@ -286,7 +286,7 @@ bool LIOBackEnd::AddNodeAndEdge() {
     }
 
     // b. GNSS position:
-    if (N < 20 || graph_optimizer_config_.use_gnss) {
+    if (graph_optimizer_config_.use_gnss) {
         // get prior position measurement:
         Eigen::Vector3d pos = current_key_gnss_.pose.block<3, 1>(0, 3).cast<double>();
         // add constraint, GNSS position:
@@ -294,7 +294,7 @@ bool LIOBackEnd::AddNodeAndEdge() {
     }
 
     // c. IMU pre-integration:
-    if (graph_optimizer_config_.use_imu_pre_integration && N > 20) {
+    if (graph_optimizer_config_.use_imu_pre_integration) {
         // add constraint, IMU pre-integraion:
         graph_optimizer_ptr_->AddPRVAGIMUPreIntegrationEdge(vertex_index_i, vertex_index_j, imu_pre_integration_);
     }
@@ -385,7 +385,6 @@ bool LIOBackEnd::SaveOptimizedPose() {
 
 void LIOBackEnd::GetOptimizedKeyFrames(std::deque<KeyFrame>& key_frames_deque) {
     key_frames_deque.clear();
-
     key_frames_deque.insert(key_frames_deque.end(), optimized_key_frames_.begin(), optimized_key_frames_.end());
 }
 
@@ -409,7 +408,7 @@ void LIOBackEnd::ShowIMUPreIntegrationResidual(
     const PoseData &last_gnss_pose, const PoseData& curr_gnss_pose,
     const IMUPreIntegrator::IMUPreIntegration &imu_pre_integration
 ) {
-    const double &T = imu_pre_integration.T_;
+    /*const double &T = imu_pre_integration.T_;
     const Eigen::Vector3d &g = imu_pre_integration.g_;
 
     Eigen::Vector3d r_p = last_gnss_pose.pose.block<3, 3>(0, 0).transpose().cast<double>() * (
@@ -493,8 +492,8 @@ void LIOBackEnd::ShowIMUPreIntegrationResidual(
                 << "\t\t\t" << imu_pre_integration.J_( 6, 12) << ", " << imu_pre_integration.J_( 6, 13) << ", " << imu_pre_integration.J_( 6, 14) << std::endl
                 << "\t\t\t" << imu_pre_integration.J_( 7, 12) << ", " << imu_pre_integration.J_( 7, 13) << ", " << imu_pre_integration.J_( 7, 14) << std::endl
                 << "\t\t\t" << imu_pre_integration.J_( 8, 12) << ", " << imu_pre_integration.J_( 8, 13) << ", " << imu_pre_integration.J_( 8, 14) << std::endl
-                */
-                << std::endl;
+                
+                << std::endl;*/
 }
 
 } // namespace lidar_localization

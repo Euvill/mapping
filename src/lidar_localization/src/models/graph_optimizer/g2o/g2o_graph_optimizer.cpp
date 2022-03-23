@@ -316,7 +316,7 @@ void G2oGraphOptimizer::ShowIMUPreIntegrationResidual(
     const int vertex_index_i, const int vertex_index_j,
     const IMUPreIntegrator::IMUPreIntegration &imu_pre_integration
 ) {
-    const g2o::VertexPRVAG* vertex_i = dynamic_cast<g2o::VertexPRVAG*>(graph_ptr_->vertex(vertex_index_i));
+   /* const g2o::VertexPRVAG* vertex_i = dynamic_cast<g2o::VertexPRVAG*>(graph_ptr_->vertex(vertex_index_i));
     const g2o::VertexPRVAG* vertex_j = dynamic_cast<g2o::VertexPRVAG*>(graph_ptr_->vertex(vertex_index_j));
 
     const Eigen::Vector3d &pos_i = vertex_i->estimate().pos;
@@ -400,8 +400,8 @@ void G2oGraphOptimizer::ShowIMUPreIntegrationResidual(
                 << "\t\t\t" << imu_pre_integration.J_( 6, 12) << ", " << imu_pre_integration.J_( 6, 13) << ", " << imu_pre_integration.J_( 6, 14) << std::endl
                 << "\t\t\t" << imu_pre_integration.J_( 7, 12) << ", " << imu_pre_integration.J_( 7, 13) << ", " << imu_pre_integration.J_( 7, 14) << std::endl
                 << "\t\t\t" << imu_pre_integration.J_( 8, 12) << ", " << imu_pre_integration.J_( 8, 13) << ", " << imu_pre_integration.J_( 8, 14) << std::endl
-                */
-                << std::endl;
+                
+                << std::endl;*/
 }
 
 Eigen::MatrixXd G2oGraphOptimizer::CalculateDiagMatrix(Eigen::VectorXd noise) {

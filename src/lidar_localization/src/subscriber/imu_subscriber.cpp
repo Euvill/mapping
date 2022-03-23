@@ -26,6 +26,14 @@ void IMUSubscriber::msg_callback(const sensor_msgs::ImuConstPtr& imu_msg_ptr) {
     imu_data.orientation.y = imu_msg_ptr->orientation.y;
     imu_data.orientation.z = imu_msg_ptr->orientation.z;
     imu_data.orientation.w = imu_msg_ptr->orientation.w;
+
+    /*imu_data.accel_bias.x = ;
+    imu_data.accel_bias.y = ;
+    imu_data.accel_bias.z = ;
+
+    imu_data.gyro_bias.x = ;
+    imu_data.gyro_bias.y = ;
+    imu_data.gyro_bias.z = ;*/
     
     // add new message to buffer:
     new_imu_data_.push_back(imu_data);
